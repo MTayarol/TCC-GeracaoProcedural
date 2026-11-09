@@ -1,0 +1,71 @@
+# ---------------------------------------------------------------
+# .gitignore para projetos Unity (baseado no template oficial do GitHub)
+# ---------------------------------------------------------------
+
+# Pastas geradas automaticamente pela Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Resultados de testes automatizados
+/[Tt]est[Rr]esults/
+*.TestResults.xml
+
+# Asset Store tools
+/[Aa]ssets/AssetStoreTools*
+
+# Plugins gerados pelo Visual Studio Tools for Unity
+/[Aa]ssets/Plugins/Editor/JetBrains*
+
+# Arquivos de IDE / soluções geradas pela Unity
+.vs/
+.vscode/
+.idea/
+.gradle/
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Metas de arquivos ignorados
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Crash reports
+sysinfo.txt
+
+# Builds
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Pastas de dados de Burst/Crashlytics geradas
+crashlytics-buildid.txt
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini

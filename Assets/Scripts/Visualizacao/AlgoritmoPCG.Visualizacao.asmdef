@@ -1,0 +1,16 @@
+{
+    "name": "AlgoritmoPCG.Visualizacao",
+    "rootNamespace": "AlgoritmoPCG.Visualizacao",
+    "references": [
+        "AlgoritmoPCG.Nucleo"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
