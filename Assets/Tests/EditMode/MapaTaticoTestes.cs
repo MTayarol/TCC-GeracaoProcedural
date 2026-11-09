@@ -89,7 +89,7 @@ namespace AlgoritmoPCG.Testes
 
         [TestCase(TipoCelula.Piso, true, false)]
         [TestCase(TipoCelula.Spawn, true, false)]
-        [TestCase(TipoCelula.Parede, false, false)]
+        [TestCase(TipoCelula.Parede, false, true)] // parede também é cobertura
         [TestCase(TipoCelula.MeiaCobertura, false, true)]
         [TestCase(TipoCelula.CoberturaTotal, false, true)]
         public void RegrasDoTipo_TransitavelECobertura(TipoCelula tipo, bool transitavel, bool cobertura)

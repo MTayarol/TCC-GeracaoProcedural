@@ -16,14 +16,16 @@
 - Unidades: 2 PA por turno; cada PA = andar ou atacar. Alcance de movimento por PA, alcance de ataque, precisão e nº de unidades por lado configuráveis. Atributos idênticos nos dois lados. Tiro que acerta elimina.
 - Movimento em 8 direções. Diagonal não corta canto (ver DEVLOG, Etapa 2).
 - Células: piso, parede, meia cobertura, cobertura total, spawn (com lado A/B). Parede e coberturas bloqueiam movimento.
+- **Parede também é cobertura** (`EhCobertura` inclui Parede), com redução própria configurável (`ParametrosCobertura.ReducaoParede`, padrão = cobertura total). Não existe tipo de célula novo para isso.
 - Visão só por alcance: paredes/coberturas NÃO bloqueiam tiro (regra assumida).
-- Chance base decai com a distância (função configurável). Cobertura só reduz se adjacente ao alvo na direção do atirador (8 direções); total reduz mais que meia. Flanco = sem redução.
+- Chance base decai com a distância (função configurável). Cobertura (meia, total ou parede) só reduz se adjacente ao alvo na direção do atirador: direção alvo→atirador arredondada para o setor de 45° mais próximo (`RegrasCobertura`). Total reduz mais que meia. Flanco = sem redução.
+- Métricas de acesso a cobertura (Etapas 6–9) **devem contar as paredes** como cobertura (usar `EhCobertura`, nunca listar tipos à mão).
 - Turnos alternados unidade a unidade. Fim por eliminação total ou limite de turnos (empate).
 - IAs heurísticas idênticas (aproximar, buscar cobertura, atacar). Todo sorteio com seed configurável.
 
 ## Roteiro
 
-1. ✅ Estrutura + grid isométrico. 2. Representação lógica do mapa. 3. Unidades e PA. 4. Chance de acerto e cobertura. 5. Unidades na Unity. 6. Gerador procedural (partição espacial). 7. Coberturas aleatória × guiada. 8. Turnos e IAs (lote sem Unity). 9. Métricas, experimentos e CSV.
+1. ✅ Estrutura + grid isométrico. 2. ✅ Representação lógica do mapa (+ parede como cobertura; `RegrasCobertura` geométrica já existe). 3. Unidades e PA. 4. Chance de acerto e cobertura. 5. Unidades na Unity. 6. Gerador procedural (partição espacial). 7. Coberturas aleatória × guiada. 8. Turnos e IAs (lote sem Unity). 9. Métricas, experimentos e CSV.
 
 ## Regras de trabalho
 

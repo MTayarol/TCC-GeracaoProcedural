@@ -8,7 +8,10 @@ namespace AlgoritmoPCG.Nucleo
         /// <summary>Chão livre: pode ser ocupado e atravessado.</summary>
         Piso = 0,
 
-        /// <summary>Obstáculo estrutural: bloqueia o movimento e não oferece cobertura.</summary>
+        /// <summary>
+        /// Obstáculo estrutural: bloqueia o movimento e também funciona como cobertura
+        /// (com redução própria, configurável). Assim como as coberturas, NÃO bloqueia o tiro.
+        /// </summary>
         Parede = 1,
 
         /// <summary>Obstáculo baixo: bloqueia o movimento e reduz parcialmente a chance de acerto.</summary>
@@ -44,10 +47,15 @@ namespace AlgoritmoPCG.Nucleo
             return !tipo.BloqueiaMovimento();
         }
 
-        /// <summary>Meia cobertura ou cobertura total. Parede NÃO conta como cobertura.</summary>
+        /// <summary>
+        /// Células que protegem uma unidade adjacente: meia cobertura, cobertura total e
+        /// parede. (Mudança de regra pós-Etapa 2: a parede passou a contar como cobertura.)
+        /// </summary>
         public static bool EhCobertura(this TipoCelula tipo)
         {
-            return tipo == TipoCelula.MeiaCobertura || tipo == TipoCelula.CoberturaTotal;
+            return tipo == TipoCelula.Parede
+                || tipo == TipoCelula.MeiaCobertura
+                || tipo == TipoCelula.CoberturaTotal;
         }
     }
 }

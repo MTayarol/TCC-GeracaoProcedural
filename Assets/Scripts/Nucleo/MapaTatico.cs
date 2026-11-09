@@ -93,7 +93,7 @@ namespace AlgoritmoPCG.Nucleo
             return DentroDosLimites(c) && _tipos[Indice(c)].EhTransitavel();
         }
 
-        /// <summary>Verdadeiro se a célula existe e é meia cobertura ou cobertura total.</summary>
+        /// <summary>Verdadeiro se a célula existe e é cobertura (meia, total ou parede).</summary>
         public bool EhCobertura(Coordenada c)
         {
             return DentroDosLimites(c) && _tipos[Indice(c)].EhCobertura();

@@ -124,7 +124,8 @@ isolado.
    (`DefinirSpawn(c, lado)`; `DefinirTipo(c, Spawn)` lança exceção). Assim, regras que só
    perguntam "é transitável?" tratam qualquer spawn igual, e não existe spawn sem lado.
 3. **Spawn é transitável** (funciona como piso para o movimento) e **não é cobertura**.
-4. **Parede não conta como cobertura.** Pelas regras, coberturas reduzem a chance de acerto e
+4. ~~**Parede não conta como cobertura.**~~ *(Revogada logo após a etapa; ver
+   "Mudança de regra: parede como cobertura".)* Pelas regras, coberturas reduzem a chance de acerto e
    paredes só bloqueiam o movimento (e, pela regra assumida, nem o tiro). Logo, uma unidade
    colada a uma parede não ganha proteção. Os dois papéis ficam separados de propósito, para
    que a métrica de cobertura conte só o que o gerador posicionou como cobertura.
@@ -168,3 +169,84 @@ isolado.
 - O Núcleo também foi compilado fora da Unity (`dotnet`, .NET 10), o que confirma que não
   depende do motor.
 - Cena `Prototipo.unity` regenerada pelo menu PCG com `VisualizadorMapa` + `ControladorPrototipo`.
+
+---
+
+## Mudança de regra: parede como cobertura (2026-11-09, após a Etapa 2)
+
+### O que mudou
+
+- **Paredes passam a funcionar como cobertura.** Continuam bloqueando o movimento e continuam
+  **não** bloqueando o tiro (a visão segue limitada só pelo alcance).
+- A parede protege **nas mesmas condições** das outras coberturas: só quando está adjacente ao
+  alvo, na direção do atirador (8 direções).
+- A redução da parede é um **parâmetro próprio** (`ParametrosCobertura.ReducaoParede`), separado
+  da cobertura total, embora o padrão seja igual (parede protege como cobertura total).
+- Não foi criado tipo de célula novo: `TipoCelulaExtensoes.EhCobertura` passou a incluir
+  `Parede`, e todo código que pergunta "é cobertura?" já herda a regra nova.
+- A decisão 4 da Etapa 2 ("parede não conta como cobertura") ficou **revogada**.
+
+### Motivo
+
+Em jogos táticos isométricos, encostar numa parede para se proteger é o comportamento que o
+jogador espera, e ignorar isso deixaria o mapa simulado pouco fiel ao gênero. Como a geração vai
+usar partição espacial (salas e corredores delimitados por paredes), uma parcela grande das
+posições protegidas do mapa vem justamente das paredes. Deixar essas posições fora da análise
+distorceria tanto as métricas quanto a simulação.
+
+### Regra assumida
+
+Assim como a visão sem bloqueio, esta é uma **regra assumida** do protótipo, inspirada em
+*Rebel Cops* sem confirmação das regras exatas do jogo. Os valores padrão também são assumidos:
+
+| Cobertura | Redução padrão |
+|---|---|
+| Meia cobertura | 0,25 |
+| Cobertura total | 0,50 |
+| Parede | 0,50 (= total) |
+
+A intenção para a Etapa 4 é aplicar a redução de forma **multiplicativa**:
+`chanceFinal = chanceBase(distância) × (1 − redução)`. Assim a chance fica sempre em [0, 1]
+e a cobertura tem efeito proporcional à distância.
+
+Manter a redução da parede como parâmetro separado também serve ao experimento: dá para rodar
+uma variante com `ReducaoParede = 0` e medir quanto do equilíbrio de um mapa vem das paredes
+(estrutura gerada pela partição) e quanto vem das coberturas posicionadas.
+
+### Direção do atirador (antecipado da Etapa 4)
+
+Os testes pedidos precisavam da regra geométrica "qual vizinho do alvo fica na direção do
+atirador", então ela foi antecipada em `RegrasCobertura` (sem a chance de acerto, que continua
+na Etapa 4):
+
+- O vetor alvo→atirador é convertido em ângulo (`atan2`) e arredondado para o **setor de 45°
+  mais próximo**, que dá uma das 8 direções. Com coordenadas inteiras nunca há empate entre
+  setores, porque as fronteiras (22,5°, 67,5°...) têm tangente irracional.
+- O alvo está protegido se o vizinho nessa direção existir no mapa e `EhCobertura` for
+  verdadeiro. Caso contrário, é flanco (redução 0).
+- *Alternativa considerada:* usar o sinal de dx e dy (`sign(dx), sign(dy)`). Foi descartada
+  porque transforma quase todo tiro em diagonal. Por exemplo, um atirador 10 casas a leste e 1
+  ao norte seria tratado como "nordeste".
+
+### Consequência para as métricas (Etapas 6 a 9)
+
+As métricas de **acesso a cobertura** (distância até a cobertura mais próxima, zonas expostas,
+cobertura por área, equidade entre os lados) **devem contar as paredes** como cobertura. Para
+garantir isso, o código das métricas deve sempre usar `EhCobertura`/`RegrasCobertura`, e nunca
+listar tipos de célula à mão.
+
+Efeito colateral a observar: a **borda de paredes** do mapa conta como cobertura, mas, pela
+regra direcional, ela só protegeria contra tiros vindos de fora do mapa, o que nunca acontece.
+Um teste confirma que um alvo encostado na borda não recebe redução contra nenhum atirador
+interno. Nas métricas, será preciso decidir se "célula adjacente a cobertura" conta paredes
+de borda. A tendência é contar só coberturas que protejam contra alguma direção de onde um
+inimigo possa atirar.
+
+### Testes
+
+- Atualizado: `RegrasDoTipo_TransitavelECobertura` (Parede → cobertura = verdadeiro).
+- Novos, em `RegrasCoberturaTestes`: arredondamento da direção em 9 casos; parede adjacente na
+  direção do atirador protege; parede na diagonal protege contra tiro diagonal mas não de
+  flanco; parede do lado oposto não protege; parede da borda não protege contra nenhum tiro
+  vindo de dentro; redução da parede configurável e independente da cobertura total; redução
+  padrão de cada tipo; validação dos parâmetros.

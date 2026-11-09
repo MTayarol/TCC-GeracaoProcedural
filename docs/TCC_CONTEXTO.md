@@ -30,7 +30,8 @@ Desenvolver um protótipo capaz de:
 - **Proposta:** um sistema que combina (1) partição espacial para estruturar o mapa,
   (2) colocação de coberturas e (3) validação por métricas topológicas e por simulação.
 - **Métricas-alvo (a refinar durante o desenvolvimento):**
-  - *Topológicas:* conectividade entre regiões e spawns; distribuição de coberturas por área;
+  - *Topológicas* (paredes contam como cobertura): conectividade entre regiões e spawns;
+    distribuição de coberturas por área;
     equidade de acesso a cobertura entre os lados (ex.: distância de caminhada até a cobertura
     mais próxima); ausência de zonas expostas (áreas sem nenhuma cobertura acessível).
   - *Simulação:* taxa de vitória de cada lado com IAs idênticas (perto de 50% indica mapa
@@ -48,13 +49,18 @@ Desenvolver um protótipo capaz de:
 **Terreno**
 - Tipos de célula: piso, parede, meia cobertura, cobertura total e spawn.
 - Parede, meia cobertura e cobertura total bloqueiam o movimento.
+- **Parede também funciona como cobertura** (regra assumida, ver DEVLOG): protege nas mesmas
+  condições das demais coberturas, com redução própria configurável — por padrão igual à da
+  cobertura total.
 
 **Visão, tiro e cobertura**
 - A visão é definida apenas pelo alcance: paredes e coberturas **não** bloqueiam o tiro (regra
   assumida, inspirada em *Rebel Cops*; ver DEVLOG).
 - A chance base de acerto decai com a distância (função configurável).
-- A cobertura reduz a chance de acerto somente quando está adjacente ao alvo, na direção do
-  atirador (8 direções). Cobertura total reduz mais que meia cobertura (valores configuráveis).
+- A cobertura (meia, total ou parede) reduz a chance de acerto somente quando está adjacente ao
+  alvo, na direção do atirador (8 direções: a direção alvo→atirador é arredondada para o setor
+  de 45° mais próximo). Cobertura total reduz mais que meia cobertura; a parede tem redução
+  própria (valores configuráveis).
 - Atirador em flanco (sem cobertura adjacente ao alvo na direção do tiro): sem redução.
 
 **Partida**
@@ -75,7 +81,7 @@ Desenvolver um protótipo capaz de:
 ## Roteiro de etapas
 
 1. ✅ Estrutura do projeto + grid isométrico configurável.
-2. Representação lógica do mapa (`MapaTatico`, tipos de célula, vizinhança de 8, mapa de teste).
+2. ✅ Representação lógica do mapa (`MapaTatico`, tipos de célula, vizinhança de 8, mapa de teste).
 3. Unidades e pontos de ação (alcance de movimento por BFS, alcance de ataque).
 4. Chance de acerto e cobertura (decaimento por distância, redução por cobertura, sorteio com seed).
 5. Unidades na Unity (exibição, destaque de alcances, chance de acerto por alvo).
