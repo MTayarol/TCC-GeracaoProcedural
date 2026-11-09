@@ -67,3 +67,104 @@ referência na escrita do TCC. Contexto acadêmico: [docs/TCC_CONTEXTO.md](docs/
 - Testes EditMode executados em batchmode (`Unity.exe -runTests -testPlatform EditMode`) numa
   cópia do projeto.
 - Cena criada via `-executeMethod AlgoritmoPCG.Ferramentas.ConfiguradorCenaPrototipo.CriarCenaPrototipo`.
+
+---
+
+## Revisão do escopo (2026-11-09, antes da Etapa 2)
+
+O escopo do TCC foi detalhado: além das métricas topológicas, o mapa também será avaliado por
+**simulação de partidas** entre duas IAs idênticas, e o experimento final compara coberturas
+**aleatórias × guiadas pelas métricas**. As regras do jogo simulado (2 PA, 8 direções, tiro
+sem bloqueio de visão, redução por cobertura adjacente ao alvo, turnos alternados, seeds) e o
+novo roteiro de 9 etapas foram registrados em `docs/TCC_CONTEXTO.md` e `CLAUDE.md`.
+
+**Regra assumida — visão sem bloqueio:** paredes e coberturas *não* bloqueiam o tiro; a visão
+é limitada só pelo alcance. A regra pretendida é inspirada em *Rebel Cops*, mas não foi
+possível confirmar as regras exatas desse jogo, então ela é tratada aqui como **regra
+assumida** do protótipo. Consequência para o TCC: o valor tático de uma posição vem só da
+cobertura adjacente e da distância, e não de esconder-se atrás de paredes. Isso simplifica a
+análise e deixa o efeito da *distribuição de coberturas* (a variável do experimento) mais
+isolado.
+
+---
+
+## Etapa 2 — Representação lógica do mapa (2026-11-09)
+
+### O que foi feito
+
+- **Núcleo**
+  - `TipoCelula` (Piso, Parede, MeiaCobertura, CoberturaTotal, Spawn) + extensões
+    `BloqueiaMovimento`, `EhTransitavel`, `EhCobertura`.
+  - `Lado` (Nenhum, A, B) + `Oponente()`.
+  - `Direcoes`: as 8 direções (Norte = +Y, Leste = +X), ortogonais e diagonais.
+  - `MapaTatico`: grid Largura × Altura; leitura/escrita de células; spawns com lado;
+    `Vizinhos8`, `VizinhosTransitaveis`, `PodeMoverEntreAdjacentes`; enumeração/contagem por
+    tipo e por lado; `Clonar()`.
+  - `ConversorMapaTexto`: mapas em ASCII (`. # h H A B`) nos dois sentidos.
+  - `MapasDeExemplo`: mapa de demonstração paramétrico (qualquer tamanho ≥ 8×6) e um mapa de
+    teste 14×9 feito à mão, ambos com todos os tipos de célula e simetria de rotação de 180°.
+- **Visualização**
+  - `VisualizadorGrid` renomeado para `VisualizadorMapa` (mesmo `.meta`/GUID): agora desenha um
+    `MapaTatico` recebido, com uma cor por tipo (spawn A azul, spawn B vermelho) definida em
+    `PaletaCores`, editável no Inspector.
+  - `ControladorPrototipo`: escolhe a origem do mapa (Demonstração com tamanho configurável,
+    ou Texto ASCII digitado no Inspector) e entrega ao visualizador.
+  - Pré-visualização na Scene view **fora do Play Mode** (gizmos pintam as células), sem
+    alterar a Tilemap salva na cena.
+- **Testes:** `MapaTaticoTestes`, `ConversorMapaTextoTestes`, `MapasDeExemploTestes`.
+
+### Decisões e justificativas
+
+1. **Armazenamento em vetor 1D (`y * Largura + x`)** em vez de `TipoCelula[,]` ou de objetos
+   por célula. É compacto (1 byte por célula), rápido de copiar e amigável ao cache. Pesa nas
+   Etapas 8–9, em que milhares de mapas serão gerados e simulados em lote.
+2. **Spawn é um tipo de célula, e o lado fica num vetor paralelo.** O pedido lista "spawn"
+   como tipo de célula, mas dois lados precisam de spawns distintos. Em vez de criar `SpawnA` e
+   `SpawnB` como tipos, o lado fica guardado à parte, e a API obriga a informá-lo
+   (`DefinirSpawn(c, lado)`; `DefinirTipo(c, Spawn)` lança exceção). Assim, regras que só
+   perguntam "é transitável?" tratam qualquer spawn igual, e não existe spawn sem lado.
+3. **Spawn é transitável** (funciona como piso para o movimento) e **não é cobertura**.
+4. **Parede não conta como cobertura.** Pelas regras, coberturas reduzem a chance de acerto e
+   paredes só bloqueiam o movimento (e, pela regra assumida, nem o tiro). Logo, uma unidade
+   colada a uma parede não ganha proteção. Os dois papéis ficam separados de propósito, para
+   que a métrica de cobertura conte só o que o gerador posicionou como cobertura.
+5. **Diagonais perto de paredes: "não cortar quina".** Um passo diagonal só é permitido se as
+   **duas** células ortogonais que ele contorna forem transitáveis. Exemplos: ir de (0,0) para
+   (1,1) exige que (1,0) e (0,1) estejam livres; uma unidade não atravessa a quina de uma
+   parede nem passa espremida entre dois obstáculos que se tocam pela diagonal. Coberturas
+   contam como obstáculo nessa regra, porque também bloqueiam o movimento.
+   - *Alternativas consideradas:* (a) permitir qualquer diagonal livre, o que deixaria as
+     unidades "atravessarem" paredes diagonais finas e quebraria a noção de corredor/sala
+     que a partição espacial vai criar; (b) bloquear só quando os **dois** ortogonais estão
+     bloqueados, um meio-termo que ainda deixa cortar quinas.
+   - *Motivo:* é a regra mais restritiva e mais intuitiva visualmente. Ela garante que
+     conectividade em 8 direções implique um caminho "real", sem frestas diagonais. Nas
+     métricas de conectividade (Etapa 6), basta usar a mesma função de vizinhança.
+   - *Custo:* um passo diagonal sempre custa 1 passo (distância de Chebyshev). O custo do
+     movimento é decidido na Etapa 3.
+6. **Mapa em texto ASCII** como formato de teste e depuração: os testes descrevem situações
+   espaciais de forma legível (o próprio teste "desenha" a parede e a cobertura), e mapas
+   gerados poderão ser impressos em logs e anexados ao TCC. Convenção: a primeira linha do
+   texto é a de maior Y (leitura cartesiana).
+7. **Mapas de exemplo com simetria de rotação de 180°.** Servem de referência de mapa "justo
+   por construção", isto é, com simetria estrutural no estilo do PSMAGE. Nas Etapas 7–9, um
+   mapa simétrico deve dar ~50% de vitórias na simulação, o que serve de teste de sanidade
+   para as métricas e as IAs. A simetria é verificada por teste automatizado.
+8. **Produtor ≠ desenhista.** `ControladorPrototipo` decide *qual* mapa existe;
+   `VisualizadorMapa` só o desenha. Na Etapa 6, o gerador procedural entra como mais uma
+   "fonte" no controlador, sem tocar no visualizador.
+9. **Pré-visualização por gizmos** em vez de escrever na Tilemap fora do Play Mode: preencher
+   a Tilemap no editor "sujaria" a cena salva com tiles temporários (que não existem em disco).
+
+### Valores padrão escolhidos
+
+- Demonstração: 16 × 12 (mínimo 8 × 6), 3 spawns por lado.
+- Cores: piso cinza-esverdeado, parede grafite, meia cobertura amarela, cobertura total
+  laranja, spawn A azul, spawn B vermelho.
+
+### Verificação
+
+- 66 testes EditMode passando (batchmode, cópia do projeto); compilação sem avisos.
+- O Núcleo também foi compilado fora da Unity (`dotnet`, .NET 10), o que confirma que não
+  depende do motor.
+- Cena `Prototipo.unity` regenerada pelo menu PCG com `VisualizadorMapa` + `ControladorPrototipo`.

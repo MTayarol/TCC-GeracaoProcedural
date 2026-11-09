@@ -1,3 +1,4 @@
+using AlgoritmoPCG.Nucleo;
 using AlgoritmoPCG.Visualizacao;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -9,7 +10,7 @@ namespace AlgoritmoPCG.Ferramentas
 {
     /// <summary>
     /// Ferramenta de editor que monta, do zero, a cena do protótipo com a hierarquia
-    /// correta (Câmera + Grid isométrico + Tilemap + VisualizadorGrid).
+    /// correta (Câmera + Grid isométrico + Tilemap + VisualizadorMapa + ControladorPrototipo).
     ///
     /// Montar a cena por código garante que a configuração (Cell Layout, Cell Size,
     /// material, referências) seja reproduzível e documentada, em vez de depender de
@@ -41,13 +42,22 @@ namespace AlgoritmoPCG.Ferramentas
             Camera camera = CriarCamera();
             Tilemap tilemap = CriarGridIsometrico(out GameObject objetoMapa);
 
-            var visualizador = objetoMapa.AddComponent<VisualizadorGrid>();
-            var serializado = new SerializedObject(visualizador);
-            serializado.FindProperty("tilemapTerreno").objectReferenceValue = tilemap;
-            serializado.FindProperty("cameraAlvo").objectReferenceValue = camera;
-            serializado.ApplyModifiedPropertiesWithoutUndo();
+            var visualizador = objetoMapa.AddComponent<VisualizadorMapa>();
+            var visualizadorSerializado = new SerializedObject(visualizador);
+            visualizadorSerializado.FindProperty("tilemapTerreno").objectReferenceValue = tilemap;
+            visualizadorSerializado.FindProperty("cameraAlvo").objectReferenceValue = camera;
+            visualizadorSerializado.ApplyModifiedPropertiesWithoutUndo();
 
-            // Enquadra já no editor para a Game view ficar coerente antes do Play.
+            var controlador = objetoMapa.AddComponent<ControladorPrototipo>();
+            var controladorSerializado = new SerializedObject(controlador);
+            controladorSerializado.FindProperty("visualizador").objectReferenceValue = visualizador;
+            controladorSerializado.ApplyModifiedPropertiesWithoutUndo();
+
+            // Pré-visualiza o mapa padrão e enquadra a câmera já no editor, para a Scene e a
+            // Game view ficarem coerentes antes do Play.
+            visualizador.DefinirPreVisualizacao(MapasDeExemplo.CriarDemonstracao(
+                controladorSerializado.FindProperty("largura").intValue,
+                controladorSerializado.FindProperty("altura").intValue));
             visualizador.EnquadrarCamera();
 
             EditorSceneManager.SaveScene(cena, CaminhoCena);
